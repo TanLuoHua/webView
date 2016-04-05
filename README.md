@@ -107,7 +107,7 @@
     
     [operation setOutputStream:[NSOutputStream outputStreamToFileAtPath:savedPath append:NO]];
     [operation setDownloadProgressBlock:^(NSUInteger bytesRead, long long totalBytesRead, long long totalBytesExpectedToRead) {
-        float p = totalBytesRead / totalBytesExpectedToRead;
+        float p = (float)totalBytesRead / totalBytesExpectedToRead;
         if (progress) progress(p);
         
     }];
