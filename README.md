@@ -224,7 +224,7 @@
 /Users/mac/Library/Developer/CoreSimulator/Devices/B8AD0EB2-2053-404A-AFC8-B61C909277D7/data/Containers/Data/Application/F8CEF99E-502C-4BCE-9D68-F3656FFC102F/Library/Caches/webZIP/text.zip
 
 ####解压
-我们用的是基于***AFNetworking***封装的下载方法， 用***WebModel***调用
+我们用的是基于***UnzipKit***封装的解压方法， 用***WebModel***调用
 ######接口
 详见下载里的 ***WebModel***
 ######下载和解压的文件如下图
