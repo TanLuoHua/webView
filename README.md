@@ -9,7 +9,7 @@
 #####2.跟网页有交互，页面如下
 ![展示页面](pictures/jietu.png =375x689) 这个不好用到git上
 
-![展示页面](pictures/jietu.png)
+![展示页面](pictures/jietu1.png)
 
 ***
 实现思路
@@ -36,6 +36,7 @@
 
 #import <Foundation/Foundation.h>
 #import <AFNetworking.h>
+#import <UnzipKit.h>
 
 @interface WebModel : NSObject
 /**
@@ -74,7 +75,32 @@
                successBlock:(void (^)(AFHTTPRequestOperation *operation, id responseObject))successBlock
                errorBlock:(void (^)(AFHTTPRequestOperation *operation, NSError *error))errorBlock
                       progress:(void (^)(float progress))progress;
+
+
+/**
+ *  @author 嘴爷, 2016-05-03 09:05:04
+ *
+ *  @brief 解压文件
+ *
+ *  @param fromPath 待解压文件的位置
+ *  @param toPath   解压到的位置
+ *  @param progress 解压进度
+ */
++(void)unArchiveFromPath:(NSString*)fromPath toPath:(NSString*)toPath progress:(void (^)(CGFloat percentDecompressed))progress;
+
+/**
+ *  @author 嘴爷, 2016-05-03 10:05:27
+ *
+ *  @brief 返回的绝对为字符串，不管是NULL nil  还是数字
+ *
+ *  @param string 待处理的对象
+ *
+ *  @return 字符串
+ */
++ (NSString *) getBlankString:(id)string;
+
 @end
+
 
 ```
 
@@ -121,6 +147,38 @@
     }];
     
     [operation start];
+}
+
+//解压
++(void)unArchiveFromPath:(NSString*)fromPath toPath:(NSString*)toPath progress:(void (^)(CGFloat percentDecompressed))progress{
+    //    下载之前删除之前的目标文件
+    NSError* fileError = nil;
+    NSFileManager* fm = [NSFileManager defaultManager];
+    if ([fm fileExistsAtPath:toPath]) {
+        [fm removeItemAtPath:toPath error:&fileError];
+        NSLog(@"删除之前的目标文件%@", fileError);
+    }
+    
+    
+    BOOL fileAtPathIsArchive = [UZKArchive pathIsAZip:fromPath];//判断是否是zip文件
+    if (!fileAtPathIsArchive) {
+        return;
+    }
+    
+    NSError *archiveError = nil;
+    UZKArchive* archive = [[UZKArchive alloc] initWithPath:fromPath error:&archiveError];
+    [archive extractFilesTo:toPath overwrite:YES progress:^(UZKFileInfo * _Nonnull currentFile, CGFloat percentArchiveDecompressed) {
+        if(progress) progress(percentArchiveDecompressed);
+        NSLog(@"解压进度%f", percentArchiveDecompressed);
+    } error:&archiveError];
+    
+    //    解压完成后删除这个zip包
+    NSError* deleteError = nil;
+    if ([fm fileExistsAtPath:fromPath]) {
+        //        [fm removeItemAtPath:fromPath error:&deleteError];
+        [archive deleteFile:fromPath error:&deleteError];
+        NSLog(@"删除ZIP源文件%@", fileError);
+    }
     
 }
 
@@ -145,10 +203,117 @@
     }
 }
 
+//去除null
++ (NSString *) getBlankString:(id)string{
+    if (string == nil || string == NULL) {
+        return @"";
+    }
+    if ([string isKindOfClass:[NSNull class]]) {
+        return @"";
+    }
+    //    if ([[string stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]] length]==0) {
+    //        return @"";
+    //    }
+    return [NSString stringWithFormat:@"%@", string];
+}
+
 @end
+
 ```
+下载位置输出:
+/Users/mac/Library/Developer/CoreSimulator/Devices/B8AD0EB2-2053-404A-AFC8-B61C909277D7/data/Containers/Data/Application/F8CEF99E-502C-4BCE-9D68-F3656FFC102F/Library/Caches/webZIP/text.zip
 
 ####解压
 我们用的是基于***AFNetworking***封装的下载方法， 用***WebModel***调用
 ######接口
+详见下载里的 ***WebModel***
+######下载和解压的文件如下图
+![下载和解压的文件](pictures/jietu2.jpg)
+
+####加载webView
+打开text文件夹
+![text文件夹](pictures/jietu3.jpg)
+找到.html文件
+![text文件夹](pictures/jietu4.jpg)
+url只要引用到这个.html文件就可以了   如果需要传入参数，可以像get请求那样，如下
+
+```objc
+//通过本地文件加载web页
+-(void)loadWebView{
+    //    NSNumber* patientID = [GlobalData sharedInstance].vipListCellModel.id;//全局持有下这个数据模型
+    NSString* htmlName = @"lastFigures.html";
+    
+#warning 这里暂时不能访问https 所以把用http
+    NSString* commonURL = [kCommonURL stringByReplacingCharactersInRange:NSMakeRange(4, 1) withString:@""];
+    NSString* path = [self.unArchiveResourcePath stringByAppendingFormat:@"/%@?token=%@&get_url=%@", htmlName, kCurrentLoginedAccessToken, commonURL];
+    
+//    path = @"/Users/mac/Downloads/lastFigures(1)/lastFigures.html";//本地测试路径
+//    NSLog(@"webPath：%@", path);
+    //    NSString* path = [self.unArchiveResourcePath stringByAppendingFormat:@"/?token=%@&get_url=%@", kCurrentLoginedAccessToken, kCommonURL];
+    
+//    path = @"https://dev.api.xhkhealth.com/admin/";
+    NSURL* url = [NSURL URLWithString:path];
+
+    NSURLRequest* request = [NSURLRequest requestWithURL:url];
+
+    [self.webView loadRequest:request];
+    
+//    [self.webView loadHTMLString:h5Str baseURL:[NSURL fileURLWithPath:path]];
+    
+}
+```
+看下运行效果
+![运行效果](pictures/jietu5.jpg)
+
+
+####交互
+可以直接用webView方法调用，或者用三方的WebViewJavascriptBridge直接用，其中webHandler方法可以直接在webView创建出来后直接调用
+```objc
+#pragma mark -
+#pragma mark - webMethod
+//webView字体缩小
+- (void)zoomIn{
+    [self.webView stringByEvaluatingJavaScriptFromString:@"fontZoomB()"];
+}
+//webView字体放大
+- (void)zoomOut{
+    
+    [self.webView stringByEvaluatingJavaScriptFromString:@"fontZoomA()"];
+}
+//网页刷新字体缩放
+- (void)reloadWebData{
+    [self.webView stringByEvaluatingJavaScriptFromString:@"reload()"];
+}
+
+///处理网页事件
+-(void)webHandler{
+    [WebViewJavascriptBridge enableLogging];
+    self.brige = [WebViewJavascriptBridge bridgeForWebView:self.webView];
+    [self.brige setWebViewDelegate:self];
+    //    注册下拉刷新方法  等待JS调用
+    [self.brige registerHandler:@"onPullRefreshSuccess" handler:^(id data, WVJBResponseCallback responseCallback) {
+        NSLog(@"下拉刷新执行了 %@", data);
+      
+    }];
+    
+    //    注册点击头像方法  等待JS调用
+    [self.brige registerHandler:@"gotoMemberInfoViewController" handler:^(id data, WVJBResponseCallback responseCallback) {
+        NSLog(@"点到头像了 人员ID %@", data);
+        
+    }];
+    
+    //    调用JS方法 JS需要注册监听
+    //    id data = @{ @"greetingFromObjC": @"Hi there, JS!" };
+    //    [self.brige callHandler:@"onPullRefreshSuccess" data:data responseCallback:^(id responseData) {
+    //        NSLog(@"onPullRefreshSuccess执行了");
+    //    }];
+}
+```
+
+
+
+
+
+
+
 
