@@ -7,9 +7,8 @@
 看一下需求
 #####1.通过一个下载链接下载资源包，解压后再去加载
 #####2.跟网页有交互，页面如下
-![展示页面](pictures/jietu.png =375x689) 这个不好用到git上
 
-![展示页面](pictures/jietu1.png)
+<img src="pictures/jietu1.png" width = "320">
 
 ***
 实现思路
@@ -228,13 +227,13 @@
 ######接口
 详见下载里的 ***WebModel***
 ######下载和解压的文件如下图
-![下载和解压的文件](pictures/jietu2.jpg)
+<img src="pictures/jietu2.jpg" width = "320">
 
 ####加载webView
 打开text文件夹
-![text文件夹](pictures/jietu3.jpg)
+<img src="pictures/jietu3.jpg" width = "320">
 找到.html文件
-![text文件夹](pictures/jietu4.jpg)
+<img src="pictures/jietu4.jpg" width = "320">
 url只要引用到这个.html文件就可以了   如果需要传入参数，可以像get请求那样，如下
 
 ```objc
@@ -254,7 +253,7 @@ url只要引用到这个.html文件就可以了   如果需要传入参数，可
 }
 ```
 看下运行效果
-![运行效果](pictures/jietu5.jpg)
+<img src="pictures/jietu5.jpg" width = "320">
 
 
 ####交互
