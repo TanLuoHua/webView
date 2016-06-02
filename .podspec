@@ -2,9 +2,9 @@ Pod::Spec.new do |s|
   s.name     = ‘webView’
   s.version  = ‘1.0.0’
   s.license  = ‘ZUIYE’
-  s.summary  = '下载ZIP，解压后加载webView，JS交互'
+  s.summary  = ‘嘴爷，下载ZIP，解压后加载webView，JS交互'
   s.homepage = 'https://github.com/yhl714387953/webView'
-  s.authors  = { 'Sohayb Hassoun' => 'sohayb.hassoun@gmail.com' }
+  s.authors  = { ‘ZuiYe’ => ‘714387953@qq.com' }
   s.source   = { :git => 'https://github.com/yhl714387953/webView.git', :tag => '2.0.4' }
   s.source_files = 'webView'
   s.requires_arc = true
